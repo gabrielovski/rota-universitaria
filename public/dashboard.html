@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Sistema Rota Universitária</title>
+    <link rel="stylesheet" href="public/styles.css">
+    <!-- Inclua a API do Google Maps com sua chave -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiqP5jcqfjMtN3r64qv8I2Vicaq_cj0ug"></script>
+    <style>
+        /* CSS Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: #333;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #555;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        /* Botões do Dashboard */
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-options button {
+            padding: 15px;
+            font-size: 18px;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #map-option {
+            background-color: #007bff;
+        }
+        
+        #map-option:hover {
+            background-color: #0056b3;
+        }
+
+        #reserve-seat {
+            background-color: #28a745;
+        }
+
+        #reserve-seat:hover {
+            background-color: #218838;
+        }
+
+        #chat-option {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        #chat-option:hover {
+            background-color: #e0a800;
+        }
+
+        /* Mapa e Chat */
+        #map, #chat {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #map {
+            display: none;
+            height: 400px;
+            width: 100%;
+        }
+
+        #chat {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bem vindo, Aluno!</h1>
+        <p>Escolha o que você quer acessar agora:</p>
+        <div class="dashboard-options">
+            <button id="map-option">Ver Mapa e Rota</button>
+            <button id="reserve-seat">Reservar Assento</button>
+            <button id="chat-option">Chat Virtual</button>
+        </div>
+
+        <div id="map"></div>
+        <div id="chat">
+            <p>Bem-vindo ao Chat Virtual. Digite sua mensagem abaixo:</p>
+            <!-- Área para integração do chat -->
+        </div>
+    </div>
+
+    <!-- JavaScript para o Dashboard -->
+    <script src="public/js/dashboard.js"></script>
+
+    <script>
+        // Redirecionar para o dashboard de acordo com a opção selecionada
+        document.getElementById('map-option').addEventListener('click', function() {
+            document.getElementById('map').style.display = 'block';
+            initMap(); // Inicializar o mapa
+        });
+
+        document.getElementById('reserve-seat').addEventListener('click', function() {
+            alert("Funcionalidade de reserva de assento em breve.");
+        });
+
+        document.getElementById('chat-option').addEventListener('click', function() {
+            document.getElementById('chat').style.display = 'block';
+        });
+
+        // Função de inicialização do mapa com localização em tempo real
+        function initMap() {
+            const mapElement = document.getElementById('map');
+            const map = new google.maps.Map(mapElement, {
+                center: { lat: -23.5505, lng: -46.6333 }, // Coordenadas iniciais
+                zoom: 15
+            });
+
+            // Marcador para a posição do motorista
+            const marker = new google.maps.Marker({
+                map: map,
+                title: 'Localização do Motorista'
+            });
+
+            // Configurar o WebSocket (substitua pela URL correta do WebSocket)
+            const socket = new WebSocket('wss://seu-servidor.com/socket');
+
+            // Atualizar a localização em tempo real
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    const pos = { lat: latitude, lng: longitude };
+
+                    // Enviar a localização para o servidor via WebSocket
+                    socket.send(JSON.stringify(pos));
+
+                    // Atualizar o marcador no mapa
+                    marker.setPosition(pos);
+                    map.panTo(pos);
+                },
+                (error) => console.error(error),
+                { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+            );
+
+            // Receber atualizações de localização do motorista
+            socket.onmessage = (event) => {
+                const { lat, lng } = JSON.parse(event.data);
+                marker.setPosition({ lat, lng });
+                map.panTo({ lat, lng });
+            };
+        }
+    </script>
+</body>
+</html>
